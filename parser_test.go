@@ -80,6 +80,9 @@ func TestParseApkFile(t *testing.T) {
 	if apk.Build != "1" {
 		t.Errorf("got %v want %v", apk.Build, "1")
 	}
+	if apk.Platform != PlatformAndroid {
+		t.Errorf("got %d want %d",  apk.Platform , PlatformAndroid)
+	}
 }
 
 func TestParseApkIconAndLabel(t *testing.T) {
@@ -131,6 +134,9 @@ func TestParseIpaFile(t *testing.T) {
 	}
 	if ipa.Build != "1.0" {
 		t.Errorf("got %v want %v", ipa.Build, "1.0")
+	}
+	if ipa.Platform != PlatformIOS {
+		t.Errorf("got %d want %d",  ipa.Platform , PlatformIOS)
 	}
 }
 

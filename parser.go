@@ -92,7 +92,6 @@ func NewAppParser(name string) (*AppInfo, error) {
 		info.Name = label
 		info.Icon = icon
 		info.Size = stat.Size()
-		info.Platform = PlatformAndroid
 		return info, err
 	}
 
@@ -101,8 +100,6 @@ func NewAppParser(name string) (*AppInfo, error) {
 		icon, err := parseIpaIcon(iosIconFile)
 		info.Icon = icon
 		info.Size = stat.Size()
-		info.Platform = PlatformIOS
-
 		return info, err
 	}
 
@@ -148,6 +145,7 @@ func parseApkFile(xmlFile *zip.File) (*AppInfo, error) {
 	info.BundleId = manifest.Package
 	info.Version = manifest.VersionName
 	info.Build = manifest.VersionCode
+	info.Platform = PlatformAndroid
 
 	return info, nil
 }
@@ -202,6 +200,7 @@ func parseIpaFile(plistFile *zip.File) (*AppInfo, error) {
 	info.BundleId = p.CFBundleIdentifier
 	info.Version = p.CFBundleShortVersion
 	info.Build = p.CFBundleVersion
+	info.Platform = PlatformIOS
 
 	return info, nil
 }
