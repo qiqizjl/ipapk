@@ -1,10 +1,10 @@
 # ipapk
 ipa or apk parser written in golang, aims to extract app information
 
-[![Build Status](https://travis-ci.org/phinexdaz/ipapk.svg?branch=master)](https://travis-ci.org/phinexdaz/ipapk)
+[![Build Status](https://travis-ci.org/qiqizjl/ipapk.svg?branch=master)](https://travis-ci.org/qiqizjl/ipapk)
 
 ## INSTALL
-	$ go get github.com/phinexdaz/ipapk
+	$ go get github.com/qiqizjl/ipapk
   
 ## USAGE
 ```go
@@ -12,7 +12,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/phinexdaz/ipapk"
+	"github.com/qiqizjl/ipapk"
 )
 
 func main() {
