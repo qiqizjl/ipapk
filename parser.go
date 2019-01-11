@@ -25,8 +25,10 @@ var (
 )
 
 const (
-	iosExt     = ".ipa"
-	androidExt = ".apk"
+	iosExt          = ".ipa"
+	androidExt      = ".apk"
+	PlatformIOS     = 1
+	PlatformAndroid = 2
 )
 
 type AppInfo struct {
@@ -36,6 +38,7 @@ type AppInfo struct {
 	Build    string
 	Icon     image.Image
 	Size     int64
+	Platform int
 }
 
 type androidManifest struct {
@@ -89,6 +92,7 @@ func NewAppParser(name string) (*AppInfo, error) {
 		info.Name = label
 		info.Icon = icon
 		info.Size = stat.Size()
+		info.Platform = PlatformAndroid
 		return info, err
 	}
 
@@ -97,6 +101,8 @@ func NewAppParser(name string) (*AppInfo, error) {
 		icon, err := parseIpaIcon(iosIconFile)
 		info.Icon = icon
 		info.Size = stat.Size()
+		info.Platform = PlatformIOS
+
 		return info, err
 	}
 
