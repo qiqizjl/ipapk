@@ -265,7 +265,7 @@ func getIosInfo(file *zip.File) (*iosInfo, error) {
 		result.Type = IOSAdHoc
 		result.AllowDevice = *info.ProvisionedDevices
 	}
-	if *info.ProvisionsAllDevices == true {
+	if info.ProvisionsAllDevices !=nil {
 		result.Type = IOSEnterprise
 	}
 	return &result, nil
