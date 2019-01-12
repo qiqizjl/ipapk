@@ -75,7 +75,7 @@ type iosPlist struct {
 type iosMobileProvision struct {
 	ProvisionsAllDevices *bool     `plist:"ProvisionsAllDevices"`
 	TeamName             string    `plist:"TeamName"`
-	ProvisionedDevices   *[]string `plist:"ProvisionedDevices:"`
+	ProvisionedDevices   *[]string `plist:"ProvisionedDevices"`
 }
 
 func NewAppParser(name string) (*AppInfo, error) {
