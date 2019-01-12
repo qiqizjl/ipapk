@@ -3,15 +3,20 @@ package ipapk
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/xml"
 	"errors"
 	"image"
 	"image/png"
+	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/andrianbdn/iospng"
 	"github.com/shogo82148/androidbinary"
@@ -20,8 +25,10 @@ import (
 )
 
 var (
-	reInfoPlist = regexp.MustCompile(`Payload/[^/]+/Info\.plist`)
-	ErrNoIcon   = errors.New("icon not found")
+	reInfoPlist          = regexp.MustCompile(`Payload/[^/]+/Info\.plist`)
+	reMobileProvision    = regexp.MustCompile(`Payload/[^/]+/embedded\.mobileprovision`)
+	ErrNoIcon            = errors.New("icon not found")
+	ErrNoMobileProvision = errors.New("mobileprovision not found")
 )
 
 const (
@@ -29,6 +36,9 @@ const (
 	androidExt      = ".apk"
 	PlatformIOS     = 1
 	PlatformAndroid = 2
+	IOSAdHoc        = 1
+	IOSAppStore     = 2
+	IOSEnterprise   = 3
 )
 
 type AppInfo struct {
@@ -39,6 +49,13 @@ type AppInfo struct {
 	Icon     image.Image
 	Size     int64
 	Platform int
+	IOS      *iosInfo
+}
+
+type iosInfo struct {
+	Type        int
+	TeamName    string
+	AllowDevice *[]string
 }
 
 type androidManifest struct {
@@ -53,6 +70,12 @@ type iosPlist struct {
 	CFBundleVersion      string `plist:"CFBundleVersion"`
 	CFBundleShortVersion string `plist:"CFBundleShortVersionString"`
 	CFBundleIdentifier   string `plist:"CFBundleIdentifier"`
+}
+
+type iosMobileProvision struct {
+	ProvisionsAllDevices *bool     `plist:"ProvisionsAllDevices"`
+	TeamName             string    `plist:"TeamName"`
+	ProvisionedDevices   *[]string `plist:"ProvisionedDevices:"`
 }
 
 func NewAppParser(name string) (*AppInfo, error) {
@@ -72,13 +95,15 @@ func NewAppParser(name string) (*AppInfo, error) {
 		return nil, err
 	}
 
-	var xmlFile, plistFile, iosIconFile *zip.File
+	var xmlFile, plistFile, iosIconFile, iosMobileProvisionFile *zip.File
 	for _, f := range reader.File {
 		switch {
 		case f.Name == "AndroidManifest.xml":
 			xmlFile = f
 		case reInfoPlist.MatchString(f.Name):
 			plistFile = f
+		case reMobileProvision.MatchString(f.Name):
+			iosMobileProvisionFile = f
 		case strings.Contains(f.Name, "AppIcon60x60"):
 			iosIconFile = f
 		}
@@ -100,6 +125,8 @@ func NewAppParser(name string) (*AppInfo, error) {
 		icon, err := parseIpaIcon(iosIconFile)
 		info.Icon = icon
 		info.Size = stat.Size()
+		info.IOS, _ = getIosInfo(iosMobileProvisionFile)
+		//getIosInfo
 		return info, err
 	}
 
@@ -220,4 +247,59 @@ func parseIpaIcon(iconFile *zip.File) (image.Image, error) {
 	iospng.PngRevertOptimization(rc, &w)
 
 	return png.Decode(bytes.NewReader(w.Bytes()))
+}
+
+func getIosInfo(file *zip.File) (*iosInfo, error) {
+	info, err := parseIpaMobileProvision(file)
+	if err != nil {
+		return nil, err
+	}
+	result := iosInfo{}
+	result.TeamName = info.TeamName
+	result.AllowDevice = info.ProvisionedDevices
+	result.Type = IOSAppStore
+	if len(*result.AllowDevice) >= 0 {
+		result.Type = IOSAdHoc
+	}
+	if *info.ProvisionsAllDevices == true {
+		result.Type = IOSEnterprise
+	}
+	return &result, nil
+}
+
+func parseIpaMobileProvision(file *zip.File) (*iosMobileProvision, error) {
+	if file == nil {
+		return nil, ErrNoMobileProvision
+	}
+	localFile := "/tmp/" + makeMD5(file.Name+time.Now().Format("2006-01-02 15:04:05")) + ".mobileprovision"
+	f, err := os.Create(localFile)
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(localFile)
+	res, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	_, err = io.Copy(f, res)
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command("openssl", "smime", "-inform", "der", "-verify", "-in", localFile)
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	p := new(iosMobileProvision)
+	decoder := plist.NewDecoder(bytes.NewReader(out))
+	if err := decoder.Decode(p); err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func makeMD5(text string) string {
+	ctx := md5.New()
+	ctx.Write([]byte(text))
+	return hex.EncodeToString(ctx.Sum(nil))
 }
