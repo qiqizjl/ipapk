@@ -265,7 +265,7 @@ func getIosInfo(file *zip.File) (*iosInfo, error) {
 		result.Type = IOSAdHoc
 		result.AllowDevice = *info.ProvisionedDevices
 	}
-	if info.ProvisionsAllDevices !=nil {
+	if info.ProvisionsAllDevices != nil {
 		result.Type = IOSEnterprise
 	}
 	return &result, nil
@@ -289,7 +289,7 @@ func parseIpaMobileProvision(file *zip.File) (*iosMobileProvision, error) {
 	if err != nil {
 		return nil, err
 	}
-	cmd := exec.Command("openssl", "smime", "-inform", "der", "-verify", "-in", localFile)
+	cmd := exec.Command("openssl", "smime", "-inform", "der", "-verify", "-noverify", "-in", localFile)
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, err
