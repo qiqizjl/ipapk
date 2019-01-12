@@ -81,7 +81,7 @@ func TestParseApkFile(t *testing.T) {
 		t.Errorf("got %v want %v", apk.Build, "1")
 	}
 	if apk.Platform != PlatformAndroid {
-		t.Errorf("got %d want %d",  apk.Platform , PlatformAndroid)
+		t.Errorf("got %d want %d", apk.Platform, PlatformAndroid)
 	}
 }
 
@@ -117,6 +117,21 @@ func getIosPlist() (*zip.File, error) {
 	return plistFile, nil
 }
 
+func getIosMobileProvision() (*zip.File, error) {
+	reader, err := getAppZipReader("testdata/helloworld.ipa")
+	if err != nil {
+		return nil, err
+	}
+	var mobileProvisionFile *zip.File
+	for _, f := range reader.File {
+		if reMobileProvision.MatchString(f.Name) {
+			mobileProvisionFile = f
+			break
+		}
+	}
+	return mobileProvisionFile, nil
+}
+
 func TestParseIpaFile(t *testing.T) {
 	plistFile, err := getIosPlist()
 	if err != nil {
@@ -136,7 +151,21 @@ func TestParseIpaFile(t *testing.T) {
 		t.Errorf("got %v want %v", ipa.Build, "1.0")
 	}
 	if ipa.Platform != PlatformIOS {
-		t.Errorf("got %d want %d",  ipa.Platform , PlatformIOS)
+		t.Errorf("got %d want %d", ipa.Platform, PlatformIOS)
+	}
+}
+
+func TestParseIpaMobileProvision(t *testing.T) {
+	mobileProvisionFile, err := getIosMobileProvision()
+	if err != nil {
+		t.Errorf("got %v want no error", err)
+	}
+	info, err := getIosInfo(mobileProvisionFile)
+	if err != nil {
+		t.Errorf("got %v want no error", err)
+	}
+	if info.Type != IOSEnterprise {
+		t.Errorf("got %d want %d", info.Type, IOSEnterprise)
 	}
 }
 

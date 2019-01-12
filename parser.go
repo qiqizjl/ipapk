@@ -49,13 +49,13 @@ type AppInfo struct {
 	Icon     image.Image
 	Size     int64
 	Platform int
-	IOS      *iosInfo
+	IOS      iosInfo
 }
 
 type iosInfo struct {
 	Type        int
 	TeamName    string
-	AllowDevice *[]string
+	AllowDevice []string
 }
 
 type androidManifest struct {
@@ -125,7 +125,10 @@ func NewAppParser(name string) (*AppInfo, error) {
 		icon, err := parseIpaIcon(iosIconFile)
 		info.Icon = icon
 		info.Size = stat.Size()
-		info.IOS, _ = getIosInfo(iosMobileProvisionFile)
+		iosInfoData, _ := getIosInfo(iosMobileProvisionFile)
+		if iosInfoData != nil {
+			info.IOS = *iosInfoData
+		}
 		//getIosInfo
 		return info, err
 	}
@@ -256,10 +259,11 @@ func getIosInfo(file *zip.File) (*iosInfo, error) {
 	}
 	result := iosInfo{}
 	result.TeamName = info.TeamName
-	result.AllowDevice = info.ProvisionedDevices
 	result.Type = IOSAppStore
-	if len(*result.AllowDevice) >= 0 {
+	result.AllowDevice = make([]string, 0)
+	if info.ProvisionedDevices != nil {
 		result.Type = IOSAdHoc
+		result.AllowDevice = *info.ProvisionedDevices
 	}
 	if *info.ProvisionsAllDevices == true {
 		result.Type = IOSEnterprise
