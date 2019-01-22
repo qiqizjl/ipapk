@@ -13,7 +13,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -109,9 +108,9 @@ func NewAppParser(name string) (*AppInfo, error) {
 		}
 	}
 
-	ext := filepath.Ext(stat.Name())
+	//ext := filepath.Ext(stat.Name())
 
-	if ext == androidExt {
+	if xmlFile != nil {
 		info, err := parseApkFile(xmlFile)
 		icon, label, err := parseApkIconAndLabel(name)
 		info.Name = label
@@ -120,7 +119,7 @@ func NewAppParser(name string) (*AppInfo, error) {
 		return info, err
 	}
 
-	if ext == iosExt {
+	if plistFile != nil {
 		info, err := parseIpaFile(plistFile)
 		icon, err := parseIpaIcon(iosIconFile)
 		info.Icon = icon
