@@ -90,6 +90,9 @@ func NewAppParser(name string) (*AppInfo, error) {
 	}
 
 	reader, err := zip.NewReader(file, stat.Size())
+	if err == zip.ErrFormat {
+		return nil, errors.New("unknown platform")
+	}
 	if err != nil {
 		return nil, err
 	}
